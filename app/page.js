@@ -1,57 +1,58 @@
-'use client'
-import {
-  Box,
-  Stack,
-  TextField,
-  Button,
-  Typography,
-  Container,
-} from '@mui/material'
-import { useState, useRef, useEffect } from 'react'
-import StickyNavBar from './StickyNavBar'
-import ArrowUpwardOutlinedIcon from '@mui/icons-material/ArrowUpwardOutlined'
-import Diversity2OutlinedIcon from '@mui/icons-material/Diversity2Outlined'
+'use client';  // This must be at the very top
+
+// Import statements must follow the 'use client' directive
+import { useAuth } from '@clerk/nextjs';
+import { useState, useRef, useEffect } from 'react';
+import { Box, Stack, TextField, Button, Typography } from '@mui/material';
+import StickyNavBar from './StickyNavBar';
+import ArrowUpwardOutlinedIcon from '@mui/icons-material/ArrowUpwardOutlined';
 
 export default function Home() {
-  const chatContainerRef = useRef(null)
-  const [history, setHistory] = useState([])
-  const [message, setMessage] = useState('')
-  const firstMessage =
-    "Hello! I'm your virtual assistant for property inquiries. How can I help?"
+  const { getToken } = useAuth();  // Clerk authentication hook
+  const chatContainerRef = useRef(null);
+  const [history, setHistory] = useState([]);
+  const [message, setMessage] = useState('');
+  const firstMessage = "Hello! I'm your virtual assistant for property inquiries. How can I help?";
 
   const handleKeyDown = (event) => {
     if (event.key === 'Enter') {
-      sendMessage()
+      sendMessage();
     }
-  }
+  };
 
   const sendMessage = async () => {
-    if (!message.trim()) return
+    if (!message.trim()) return;
     setHistory((history) => [
       ...history,
       { role: 'user', parts: [{ text: message }] },
-    ])
-    setMessage('')
-    const response = await fetch('/api/gemini', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify([
-        ...history,
-        { role: 'user', parts: [{ text: message }] },
-      ]),
-    })
-    const data = await response.json()
+    ]);
+    setMessage('');
+
+    const token = await getToken();  // Get the Clerk authentication token
+
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/protected`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    
+
+    const data = await response.json();
+    console.log(data);  // Log the response from the backend
+
     setHistory((history) => [
       ...history,
-      { role: 'model', parts: [{ text: data }] },
-    ])
-  }
+      { role: 'model', parts: [{ text: data.message }] },  // Update history with backend response
+    ]);
+  };
 
   useEffect(() => {
     if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
-  }, [history])
+  }, [history]);
 
   return (
     <Box sx={{ width: '100vw', height: '100vh', backgroundColor: '#000000cf' }}>
@@ -65,7 +66,6 @@ export default function Home() {
           justifyContent: 'space-between',
           alignItems: 'center',
           overflow: 'hidden',
-          // backgroundColor: '#000000cf',
         }}
       >
         <Box
@@ -96,8 +96,7 @@ export default function Home() {
             <Box
               key={index}
               sx={{
-                alignSelf:
-                  textObject.role === 'user' ? 'flex-end' : 'flex-start',
+                alignSelf: textObject.role === 'user' ? 'flex-end' : 'flex-start',
                 bgcolor: textObject.role === 'user' ? '#4e4c4c' : 'black',
                 color: 'white',
                 borderRadius: 10,
@@ -105,7 +104,6 @@ export default function Home() {
                 maxWidth: '70%',
               }}
             >
-              {/* <Diversity2OutlinedIcon /> */}
               <Typography>{textObject.parts[0].text}</Typography>
             </Box>
           ))}
@@ -131,7 +129,7 @@ export default function Home() {
               border: '3px solid #a8a5a5',
               borderRadius: 10,
               '& .MuiInputBase-input': {
-                color: 'white', // Set the text color to white
+                color: 'white',  // Set the text color to white
               },
               '& fieldset': { border: 'none' },
             }}
@@ -146,13 +144,15 @@ export default function Home() {
             }}
             onClick={sendMessage}
           >
-            <ArrowUpwardOutlinedIcon style={{}} />
+            <ArrowUpwardOutlinedIcon />
           </Button>
         </Stack>
       </Box>
     </Box>
-  )
+  );
 }
+
+
 
 // 'use client'
 // import Image from 'next/image'

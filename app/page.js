@@ -32,18 +32,15 @@ export default function Home() {
       { role: 'user', parts: [{ text: message }] },
     ])
     setMessage('')
-    const response = await fetch('/api/gemini', {
+    const response = await fetch('/api/cloudFunction', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify([
-        ...history,
-        { role: 'user', parts: [{ text: message }] },
-      ]),
+      body: JSON.stringify({ prompt: message }),
     })
     const data = await response.json()
     setHistory((history) => [
       ...history,
-      { role: 'model', parts: [{ text: data }] },
+      { role: 'model', parts: [{ text: data.response_text }] },
     ])
   }
 
